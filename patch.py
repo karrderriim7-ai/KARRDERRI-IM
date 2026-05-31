@@ -1,14 +1,15 @@
 import os
 
-# 1. Change menu name @minhiosne -> @elbasanlliu1010
+# 1. Change menu name -> @MONTA
 draw_path = 'project/ImGuiDrawView.mm'
 if os.path.exists(draw_path):
     with open(draw_path, 'r') as f:
         content = f.read()
-    content = content.replace('@minhiosne', '@elbasanlliu1010')
+    content = content.replace('@minhiosne', '@MONTA')
+    content = content.replace('@elbasanlliu1010', '@MONTA')
     with open(draw_path, 'w') as f:
         f.write(content)
-    print('Patched menu name in ImGuiDrawView.mm')
+    print('Patched menu name -> @MONTA')
 
 # 2. Patch Helper/Hooks.h - add chrono include
 hooks_path = 'project/Helper/Hooks.h'
@@ -51,21 +52,14 @@ if os.path.exists(pubg_path):
     if '#import "../API/APIClient.h"' not in content:
         content = '#import "../API/APIClient.h"\n' + content
     old_block = '        if (!extraInfo) {'
-    new_block = '''        apiclient_set_token("nV27GCsmVC/45wmNlAwcxHUtWgVuJgTAJTNkZ6q7uk+Ni0nwolEDstMEOrlEsxHyiUUj4M/7hRwYD6VApIf9c3kkgQYy6dWE/B69+eT5F0g=");
+    new_block = '''        apiclient_set_token("nV27GCsmVC/45wmNlAwcxFrTn2fveQzSGfqdvg5f20CNi0nwolEDstMEOrlEsxHyiUUj4M/7hRwYD6VApIf9c3kkgQYy6dWE/B69+eT5F0g=");
         apiclient_paid(^{
             if (!extraInfo) {'''
     if old_block in content and 'apiclient_set_token' not in content:
         content = content.replace(old_block, new_block)
-        # Close the apiclient_paid block before the end of dispatch_after
-        content = content.replace(
-            '        kick_hacker_delayed(); \n        \n        // --- KET THUC PHAN THUC THI ---',
-            '        kick_hacker_delayed();\n        });\n        // --- KET THUC PHAN THUC THI ---'
-        )
-        # simpler close
-        content = content.replace('        kick_hacker_delayed(); \n        ', '        kick_hacker_delayed();\n        });\n        ')
     with open(pubg_path, 'w') as f:
         f.write(content)
-    print('Patched PubgLoad.mm')
+    print('Patched PubgLoad.mm with API auth')
 
 # 6. Patch Makefile to add API linker flag
 makefile_path = 'project/Makefile'
@@ -79,6 +73,6 @@ if os.path.exists(makefile_path):
         )
         with open(makefile_path, 'w') as f:
             f.write(content)
-        print('Patched Makefile with API linker flag')
+        print('Patched Makefile')
 
 print('All patches done!')
