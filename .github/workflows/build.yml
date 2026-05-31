@@ -3,12 +3,17 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+env:
+  THEOS: /Users/runner/theos
+  THEOS_MAKE_PATH: /Users/runner/theos/makefiles
+
 jobs:
   build:
     runs-on: macos-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Extract project
         run: |
           python3 -c "
@@ -16,14 +21,30 @@ jobs:
           with zipfile.ZipFile('vannghia.zip', 'r') as z:
               z.extractall('project/')
           "
-      - name: Install Theos
-        run: bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+
+      - name: Install Theos dependencies
+        run: brew install ldid xz make
+
+      - name: Clone Theos
+        run: |
+          git clone --recursive https://github.com/theos/theos.git $THEOS
+
+      - name: Download iOS SDK
+        run: |
+          mkdir -p $THEOS/sdks
+          curl -L https://github.com/theos/sdks/releases/download/2024Q4/iPhoneOS16.5.sdk.tar.xz -o sdk.tar.xz
+          tar -xf sdk.tar.xz -C $THEOS/sdks/
+
       - name: Build
-        run: cd project && make package FINALPACKAGE=1
-      - name: Upload dylib
+        run: |
+          cd project
+          gmake package FINALPACKAGE=1 2>&1
+
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: 34306jit-dylib
           path: |
             project/.theos/obj/
             project/packages/
+          if-no-files-found: warn
