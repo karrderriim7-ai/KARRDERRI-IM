@@ -4,6 +4,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+env:
+  THEOS: /Users/runner/theos
+
 jobs:
   build:
     runs-on: macos-latest
@@ -19,15 +22,27 @@ jobs:
               z.extractall('project/')
           "
 
-      - name: Setup Theos
-        uses: kabiroberai/theos-action@v2
-        with:
-          sdk-version: "16.5"
-          theos-dir: ${{ github.workspace }}/theos
+      - name: Install dependencies
+        run: brew install ldid xz make
+
+      - name: Clone Theos
+        run: |
+          git clone --recursive https://github.com/theos/theos.git $THEOS
+
+      - name: Download iOS SDK
+        run: |
+          mkdir -p $THEOS/sdks
+          curl -L --retry 3 \
+            https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS16.5.sdk.tar.xz \
+            -o sdk.tar.xz
+          tar -xJf sdk.tar.xz -C $THEOS/sdks/
 
       - name: Build
         working-directory: project
-        run: make package FINALPACKAGE=1
+        run: |
+          export THEOS=/Users/runner/theos
+          export PATH=$THEOS/bin:$PATH
+          gmake package FINALPACKAGE=1
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
