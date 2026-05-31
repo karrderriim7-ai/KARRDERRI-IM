@@ -25,6 +25,46 @@ jobs:
               z.extractall('project/')
           "
 
+      - name: Patch source files
+        run: |
+          python3 -c "
+          import os
+
+          # Patch Helper/Hooks.h - add chrono include at top
+          hooks_path = 'project/Helper/Hooks.h'
+          if os.path.exists(hooks_path):
+              with open(hooks_path, 'r') as f:
+                  content = f.read()
+              if '#include <chrono>' not in content:
+                  content = '#include <chrono>\n' + content
+                  with open(hooks_path, 'w') as f:
+                      f.write(content)
+                  print('Patched Hooks.h - added chrono')
+
+          # Patch Other/dobby_defines.h - move stdint include before extern C
+          dobby_path = 'project/Other/dobby_defines.h'
+          if os.path.exists(dobby_path):
+              with open(dobby_path, 'r') as f:
+                  content = f.read()
+              # Add stdint before extern C block
+              if '#include <stdint.h>' in content and 'extern "C"' in content:
+                  content = content.replace('#include <stdint.h>', '')
+                  content = '#include <stdint.h>\n' + content
+                  with open(dobby_path, 'w') as f:
+                      f.write(content)
+                  print('Patched dobby_defines.h')
+
+          # Patch Helper/Monostring.h - fix template syntax
+          mono_path = 'project/Helper/Monostring.h'
+          if os.path.exists(mono_path):
+              with open(mono_path, 'r') as f:
+                  content = f.read()
+              content = content.replace('->template toCPPlist()', '->toCPPlist()')
+              with open(mono_path, 'w') as f:
+                  f.write(content)
+              print('Patched Monostring.h')
+          "
+
       - name: Install dependencies
         run: brew install ldid xz make
 
