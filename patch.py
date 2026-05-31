@@ -1,4 +1,4 @@
-import os
+import os, re
 
 # 1. Change menu name -> @MONTA
 draw_path = 'project/ImGuiDrawView.mm'
@@ -44,22 +44,51 @@ if os.path.exists(mono_path):
         f.write(content)
     print('Patched Monostring.h')
 
-# 5. Add API authentication to PubgLoad.mm
+# 5. Add API authentication to PubgLoad.mm - replace entire block
 pubg_path = 'project/Esp/PubgLoad.mm'
 if os.path.exists(pubg_path):
     with open(pubg_path, 'r') as f:
         content = f.read()
     if '#import "../API/APIClient.h"' not in content:
         content = '#import "../API/APIClient.h"\n' + content
-    old_block = '        if (!extraInfo) {'
-    new_block = '''        apiclient_set_token("nV27GCsmVC/45wmNlAwcxFrTn2fveQzSGfqdvg5f20CNi0nwolEDstMEOrlEsxHyiUUj4M/7hRwYD6VApIf9c3kkgQYy6dWE/B69+eT5F0g=");
-        apiclient_paid(^{
-            if (!extraInfo) {'''
-    if old_block in content and 'apiclient_set_token' not in content:
-        content = content.replace(old_block, new_block)
+    if 'apiclient_set_token' not in content:
+        old_block = (
+            '        if (!extraInfo) {\n'
+            '            extraInfo = [PubgLoad new];\n'
+            '        }\n'
+            '        [extraInfo initTapGes];\n'
+            '        [extraInfo initTapGes2];\n'
+            '\n'
+            '        // K\u00edch ho\u1ea1t Menu v\u00e0 c\u00e1c h\u00e0m li\u00ean quan\n'
+            '        MenDeal = true; \n'
+            '        kick_hacker_delayed(); '
+        )
+        new_block = (
+            '        apiclient_set_token("nV27GCsmVC/45wmNlAwcxFrTn2fveQzSGfqdvg5f20CNi0nwolEDstMEOrlEsxHyiUUj4M/7hRwYD6VApIf9c3kkgQYy6dWE/B69+eT5F0g=");\n'
+            '        apiclient_paid(^{\n'
+            '            if (!extraInfo) {\n'
+            '                extraInfo = [PubgLoad new];\n'
+            '            }\n'
+            '            [extraInfo initTapGes];\n'
+            '            [extraInfo initTapGes2];\n'
+            '            MenDeal = true;\n'
+            '            kick_hacker_delayed();\n'
+            '        });'
+        )
+        if old_block in content:
+            content = content.replace(old_block, new_block)
+            print('Patched PubgLoad.mm with API auth (exact match)')
+        else:
+            # fallback: simpler replace using regex
+            content = re.sub(
+                r'(        if \(!extraInfo\) \{[^}]+\}\s+\[extraInfo initTapGes\];\s+\[extraInfo initTapGes2\];[^;]+;\s+kick_hacker_delayed\(\);)',
+                '        apiclient_set_token("nV27GCsmVC/45wmNlAwcxFrTn2fveQzSGfqdvg5f20CNi0nwolEDstMEOrlEsxHyiUUj4M/7hRwYD6VApIf9c3kkgQYy6dWE/B69+eT5F0g=");\n        apiclient_paid(^{\n            if (!extraInfo) {\n                extraInfo = [PubgLoad new];\n            }\n            [extraInfo initTapGes];\n            [extraInfo initTapGes2];\n            MenDeal = true;\n            kick_hacker_delayed();\n        });',
+                content,
+                flags=re.DOTALL
+            )
+            print('Patched PubgLoad.mm with API auth (regex)')
     with open(pubg_path, 'w') as f:
         f.write(content)
-    print('Patched PubgLoad.mm with API auth')
 
 # 6. Patch Makefile to add API linker flag
 makefile_path = 'project/Makefile'
