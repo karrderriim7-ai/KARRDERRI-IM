@@ -9,10 +9,13 @@ env:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-14
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Select Xcode 15
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
 
       - name: Extract project
         run: |
@@ -20,27 +23,6 @@ jobs:
           import zipfile, os
           with zipfile.ZipFile('vannghia.zip', 'r') as z:
               z.extractall('project/')
-          "
-
-      - name: Patch Makefile for Xcode 16 compatibility
-        run: |
-          python3 -c "
-          import re
-          with open('project/Makefile', 'r') as f:
-              content = f.read()
-          # Add Xcode 16 compatibility flags to CCFLAGS
-          content = content.replace(
-              '-fno-rtti',
-              '-fno-rtti -fno-cxx-modules -Wno-module-import-in-extern-c -Wno-missing-template-arg-list-after-template-kw'
-          )
-          # Also patch CFLAGS
-          content = content.replace(
-              '-fobjc-arc',
-              '-fobjc-arc -fno-cxx-modules -Wno-module-import-in-extern-c'
-          )
-          with open('project/Makefile', 'w') as f:
-              f.write(content)
-          print('Makefile patched!')
           "
 
       - name: Install dependencies
