@@ -22,12 +22,32 @@ jobs:
               z.extractall('project/')
           "
 
+      - name: Patch Makefile for Xcode 16 compatibility
+        run: |
+          python3 -c "
+          import re
+          with open('project/Makefile', 'r') as f:
+              content = f.read()
+          # Add Xcode 16 compatibility flags to CCFLAGS
+          content = content.replace(
+              '-fno-rtti',
+              '-fno-rtti -fno-cxx-modules -Wno-module-import-in-extern-c -Wno-missing-template-arg-list-after-template-kw'
+          )
+          # Also patch CFLAGS
+          content = content.replace(
+              '-fobjc-arc',
+              '-fobjc-arc -fno-cxx-modules -Wno-module-import-in-extern-c'
+          )
+          with open('project/Makefile', 'w') as f:
+              f.write(content)
+          print('Makefile patched!')
+          "
+
       - name: Install dependencies
         run: brew install ldid xz make
 
       - name: Clone Theos
-        run: |
-          git clone --recursive https://github.com/theos/theos.git $THEOS
+        run: git clone --recursive https://github.com/theos/theos.git $THEOS
 
       - name: Download iOS SDK
         run: |
