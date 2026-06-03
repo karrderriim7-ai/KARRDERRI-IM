@@ -1,15 +1,14 @@
 import os, re
 
-# 1. Change menu name -> @MONTA
+# 1. Change menu name -> @NOLITE
 draw_path = 'project/ImGuiDrawView.mm'
 if os.path.exists(draw_path):
     with open(draw_path, 'r') as f:
         content = f.read()
-    content = content.replace('@minhiosne', '@MONTA')
-    content = content.replace('@elbasanlliu1010', '@MONTA')
+    content = re.sub(r'@minhiosne|@elbasanlliu1010|@MONTA|@NOLITE', '@NOLITE', content)
     with open(draw_path, 'w') as f:
         f.write(content)
-    print('Patched menu name -> @MONTA')
+    print('Patched menu name -> @NOLITE')
 
 # 2. Patch Helper/Hooks.h - add chrono include
 hooks_path = 'project/Helper/Hooks.h'
@@ -44,7 +43,7 @@ if os.path.exists(mono_path):
         f.write(content)
     print('Patched Monostring.h')
 
-# 5. Add API authentication to PubgLoad.mm - replace entire block
+# 5. Add API authentication to PubgLoad.mm
 pubg_path = 'project/Esp/PubgLoad.mm'
 if os.path.exists(pubg_path):
     with open(pubg_path, 'r') as f:
@@ -64,7 +63,7 @@ if os.path.exists(pubg_path):
             '        kick_hacker_delayed(); '
         )
         new_block = (
-            '        apiclient_set_token("nV27GCsmVC/45wmNlAwcxFrTn2fveQzSGfqdvg5f20CNi0nwolEDstMEOrlEsxHyiUUj4M/7hRwYD6VApIf9c3kkgQYy6dWE/B69+eT5F0g=");\n'
+            '        apiclient_set_token("nV27GCsmVC/45wmNlAwcxK216pvJs5GILvWY3SXAlsCNi0nwolEDstMEOrlEsxHyiUUj4M/7hRwYD6VApIf9c3kkgQYy6dWE/B69+eT5F0g=");\n'
             '        apiclient_paid(^{\n'
             '            if (!extraInfo) {\n'
             '                extraInfo = [PubgLoad new];\n'
@@ -79,14 +78,16 @@ if os.path.exists(pubg_path):
             content = content.replace(old_block, new_block)
             print('Patched PubgLoad.mm with API auth (exact match)')
         else:
-            # fallback: simpler replace using regex
             content = re.sub(
-                r'(        if \(!extraInfo\) \{[^}]+\}\s+\[extraInfo initTapGes\];\s+\[extraInfo initTapGes2\];[^;]+;\s+kick_hacker_delayed\(\);)',
-                '        apiclient_set_token("nV27GCsmVC/45wmNlAwcxFrTn2fveQzSGfqdvg5f20CNi0nwolEDstMEOrlEsxHyiUUj4M/7hRwYD6VApIf9c3kkgQYy6dWE/B69+eT5F0g=");\n        apiclient_paid(^{\n            if (!extraInfo) {\n                extraInfo = [PubgLoad new];\n            }\n            [extraInfo initTapGes];\n            [extraInfo initTapGes2];\n            MenDeal = true;\n            kick_hacker_delayed();\n        });',
-                content,
-                flags=re.DOTALL
+                r'        if \(!extraInfo\) \{.*?kick_hacker_delayed\(\);',
+                '        apiclient_set_token("nV27GCsmVC/45wmNlAwcxK216pvJs5GILvWY3SXAlsCNi0nwolEDstMEOrlEsxHyiUUj4M/7hRwYD6VApIf9c3kkgQYy6dWE/B69+eT5F0g=");\n        apiclient_paid(^{\n            if (!extraInfo) {\n                extraInfo = [PubgLoad new];\n            }\n            [extraInfo initTapGes];\n            [extraInfo initTapGes2];\n            MenDeal = true;\n            kick_hacker_delayed();\n        });',
+                content, flags=re.DOTALL
             )
             print('Patched PubgLoad.mm with API auth (regex)')
+    else:
+        # Already patched - just update the token
+        content = re.sub(r'apiclient_set_token\("[^"]*"\)', 'apiclient_set_token("nV27GCsmVC/45wmNlAwcxK216pvJs5GILvWY3SXAlsCNi0nwolEDstMEOrlEsxHyiUUj4M/7hRwYD6VApIf9c3kkgQYy6dWE/B69+eT5F0g=")', content)
+        print('Updated API token in PubgLoad.mm')
     with open(pubg_path, 'w') as f:
         f.write(content)
 
